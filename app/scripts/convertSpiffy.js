@@ -20,59 +20,97 @@
         } else if (codeHtml.val().indexOf('p(artHtml5)') > -1 || codeHtml.val().indexOf('p(folhagraficos)') > -1) {
             console.log('sou um código spiffy');
             convertSpiffy(codeHtml.val());
-        } else if (codeHtml.val().indexOf('http') === 0 || codeHtml.val().indexOf('//') === 0 ) {
+        } else if (codeHtml.val().indexOf('http') === 0 || codeHtml.val().indexOf('//') === 0) {
             console.log('sou um link');
             convertLink(codeHtml.val());
         } else {
-            error.push('Você está fazendo algo de errado');
             callError();
         }
     });
 
-    var convertTableau = function(code) {
-    	var objS = folhaArte.codeSpiffy;
+    // var convertTableau = function(code) {
+    // 	var objS = folhaArte.codeSpiffy;
 
-      objS.type = 'artHtml5';
+    //   objS.type = 'artHtml5';
 
-      objS.url = checkUrl(code.substring(code.indexOf(':')+1, code.indexOf('?')));
+    //   objS.url = checkUrl(code.substring(code.indexOf(':')+1, code.indexOf('?')));
 
-      objS.width = checkWidth( code.substring(code.indexOf('w=')+2, code.indexOf('&h=')) );
-      objS.height = code.substr(code.indexOf('&h=')+3);
+    //   objS.width = checkWidth( code.substring(code.indexOf('w=')+2, code.indexOf('&h=')) );
+    //   objS.height = code.substr(code.indexOf('&h=')+3);
 
 
-      console.log(objS);
-      writeInputs();
-    };
+    //   console.log(objS);
+    //   writeInputs();
+    // };
 
     var convertLink = function(code) {
-    	var objS = folhaArte.codeSpiffy;
+        var objS = folhaArte.codeSpiffy;
 
-      objS.url = checkUrl(code);
+        objS.url = checkUrl(code);
 
 
-      console.log(objS);
-      writeInputs();
+        console.log(objS);
+        writeInputs();
     };
 
     var convertSpiffy = function(code) {
-    	var objS = folhaArte.codeSpiffy;
+        var objS = folhaArte.codeSpiffy;
 
-      objS.type = code.match(/\(([^)]+)\)/)[1];
+        objS.type = code.match(/\(([^)]+)\)/)[1];
 
-      objS.title = code.match(/\[([^)]+)\]/)[1];
+        objS.title = code.match(/\[([^)]+)\]/)[1];
 
-      objS.url = checkUrl(code.substring(code.indexOf(':')+1, code.indexOf('?')));
+        objS.url = checkUrl(code.substring(code.indexOf(':') + 1, code.indexOf('?')));
 
-      objS.width = checkWidth( code.substring(code.indexOf('w=')+2, code.indexOf('&h=')) );
-      objS.height = code.substr(code.indexOf('&h=')+3);
+        objS.width = checkWidth(code.substring(code.indexOf('w=') + 2, code.indexOf('&h=')));
+        objS.height = code.substr(code.indexOf('&h=') + 3);
 
 
-      console.log(objS);
-      writeInputs();
+        console.log(objS);
+        writeInputs();
     };
 
     var callError = function() {
+        error = [];
+        $('#spacePreview').empty();
+
         $('.alert ul').empty();
+
+        if ($('#height').val() === '') {
+            error.push('Precisa preencher a altura');
+            $('#height').addClass('required');
+        } else {
+            $('#height').removeClass('required');
+        }
+
+        if (!$('input[type=radio][name=type]:checked').val()) {
+            error.push('Escolha um tipo');
+            $('input[type=radio][name=type]').addClass('required');
+        } else {
+            $('input[type=radio][name=type]').removeClass('required');
+        }
+
+        if ($('#url').val() === '') {
+            error.push('Precisa preencher o endereço');
+            $('#url').addClass('required');
+        } else {
+            $('#url').removeClass('required');
+        }
+
+        if ($('#title').val().split(' ').length <2) {
+            error.push('Escreva um título mais claro');
+            $('#title').addClass('required');
+        } else {
+            $('#title').removeClass('required');
+        }
+
+        if ($('#width').val() === '') {
+            error.push('Precisa preencher a largura');
+            $('#width').addClass('required');
+        } else {
+            $('#width').removeClass('required');
+        }
+
         if (!error.length) {
             $('.alert').addClass('hidden');
         } else {
@@ -82,9 +120,19 @@
             for (var i = 0; i < error.length; i++) {
                 $('.alert ul').prepend('<li>' + error[i] + '</li>');
             }
-            $('#result').html('<span>o codigo vai aparecer aqui.</span>');
+            $('#result').html('<span>O código vai aparecer aqui.</span>');
+        }
+        showError();
+    };
+
+    var showError = function() {
+        if (!error.length) {
+            return true;
+        } else {
+            return false;
         }
     };
+
     var convertIframe = function(code) {
         var tempCode = code.replace('<iframe ', '').replace('</iframe>', '').replace('>', '').replace('/>', '').split(' ');
         console.log(tempCode);
@@ -106,7 +154,7 @@
 
     var checkWidth = function(width) {
         console.log(width);
-        if (Number(width) > 620  || width.indexOf('%')>-1 ) {
+        if (Number(width) > 620 || width.indexOf('%') > -1) {
             width = 620;
         }
 
@@ -117,7 +165,8 @@
         if (!typeI) {
             typeI = 'others';
         }
-        var type = 'artHtml5';
+        console.log(folhaArte.codeSpiffy.type);
+        var type = folhaArte.codeSpiffy.type || 'artHtml5';
 
         if (url.indexOf('/graficos/') > -1) {
             type = 'folhagraficos';
@@ -135,9 +184,30 @@
         if (url.indexOf('//') === 0) {
             url = 'http:' + url;
         }
-        if (url.indexOf('google') > -1 && url.indexOf('output=embed') === -1) {
+
+        if (url.indexOf('http') === -1) {
+            url = 'http://' + url;
+        }
+
+        //Regra para o MyMaps
+        if (url.indexOf('google.') > -1 && url.indexOf('/maps/d') > -1) {
+            if (url.indexOf('/embed') === -1) {
+                var pt1 = url.split('?'),
+                    pt2 = pt1[1].split('&'),
+                    tmpl = 'https://www.google.com/maps/d/embed?mid={{mid}}',
+                    mid;
+                for (var i = 0; i < pt2.length; i++) {
+                    if (pt2[i].indexOf('mid=') > -1) {
+                        mid = pt2[i].substr(4);
+                    }
+                }
+                url = tmpl.replace('{{mid}}', mid);
+            }
+        }
+        if (url.indexOf('google.') > -1 && url.indexOf('output=embed') === -1) {
             url = url + '&output=embed';
         }
+
         if (url.indexOf('tableau') > -1 && url.indexOf(':showVizHome=no') === -1) {
             url = url + '&:showVizHome=no';
         }
@@ -147,15 +217,15 @@
         return url;
     };
 
-    var checkTitle = function(codeTitle) {
-        var title = '';
-        if (codeTitle.split(' ').length > 1) {
-            title = codeTitle;
-        } else {
-        	error.push('Coloque um titulo mais claro, por favor');
-        }
-        return title;
-    };
+    // var checkTitle = function(codeTitle) {
+    //     var title = '';
+    //     if (codeTitle.split(' ').length > 1) {
+    //         title = codeTitle;
+    //     } else {
+    //         error.push('Coloque um titulo mais claro, por favor');
+    //     }
+    //     return title;
+    // };
 
     $('input[type=radio][name=type]').change(function(event) {
         folhaArte.codeSpiffy.type = checkType(folhaArte.codeSpiffy.url, this.value);
@@ -163,7 +233,7 @@
     });
     $('#title, #width, #height, #url').keyup(function(event) {
         $('#width').val(checkWidth($('#width').val()));
-        folhaArte.codeSpiffy.title = checkTitle( $('#title').val());
+        folhaArte.codeSpiffy.title = $('#title').val();
         folhaArte.codeSpiffy.width = $('#width').val();
         folhaArte.codeSpiffy.height = $('#height').val();
         folhaArte.codeSpiffy.url = checkUrl($('#url').val());
@@ -174,6 +244,7 @@
 
     var writeInputs = function() {
         var objS = folhaArte.codeSpiffy;
+
         $('#title').val(objS.title);
         $('#width').val(objS.width);
         $('#height').val(objS.height);
@@ -181,8 +252,9 @@
         writeSpiffycode();
     };
     var writeSpiffycode = function() {
-        error = [];
-        if ($('#title').val() && $('#width').val() && $('#height').val() && $('#url').val()) {
+        // error = [];
+        callError();
+        if (showError()) {
             var template = 'p({{typeChart}}). "[{{titleChart}}]":{{urlChart}}?w={{w}}&h={{h}}';
             var objS = folhaArte.codeSpiffy;
 
@@ -194,11 +266,19 @@
 
             console.log(codeSpiffy);
             $('#result').text(codeSpiffy);
-            $('.alert').removeClass('hidden');
-        } else {
-            $('.alert').addClass('hidden');
-            error.push('Você não preencheu todos os campos necessários.');
+            //$('.alert').removeClass('hidden');
+            writePreview();
         }
-        callError();
+
+    };
+    var writePreview = function() {
+        $('#spacePreview').empty();
+        var template = '<iframe src="{{urlChart}}" width="{{w}}" height="{{h}}" frameborder="0"></iframe>',
+            objS = folhaArte.codeSpiffy,
+            iframe = template.replace('{{urlChart}}', objS.url)
+            .replace('{{w}}', objS.width)
+            .replace('{{h}}', objS.height);
+        $('#spacePreview').html(iframe);
+
     };
 })();

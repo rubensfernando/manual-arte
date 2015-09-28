@@ -56,15 +56,6 @@ gulp.task('images', () => {
     .pipe($.size({title: 'images'}));
 });
 
-gulp.task('fileinclude', function() {
-	return gulp.src('app/**/*.tpl.html')
-	.pipe($.fileinclude())
-	.pipe(rename({extname:''}))
-	.pipe(rename({extname:'.html'}))
-	.pipe(gulp.dest('dist'))
-	.pipe(notify({message: 'Includes: included'}));
-});
-
 // Copy all files at the root level (app)
 gulp.task('copy', () => {
   return gulp.src([
@@ -177,7 +168,7 @@ gulp.task('serve', ['styles'], () => {
   });
 
   // watch task for gulp-file-include
- gulp.watch(path.join('app/**/*.html'), ['fileinclude']);
+ 	//gulp.watch(path.join('app/**/*.html'), ['fileinclude']);
   gulp.watch(['app/**/*.html'], reload);
   gulp.watch(['app/styles/**/*.{scss,css}'], ['styles', reload]);
   gulp.watch(['app/scripts/**/*.js'], ['jshint']);
@@ -202,8 +193,23 @@ gulp.task('serve:dist', ['default'], () => {
 gulp.task('default', ['clean'], cb => {
   runSequence(
     'styles',
-    ['jshint', 'fileinclude','html', 'scripts', 'images', 'fonts', 'copy'],
+    ['jshint','html', 'scripts', 'images', 'fonts', 'copy'],
     'generate-service-worker',
+    cb
+  );
+});
+
+
+gulp.task('move2server', function() {
+    gulp.src('dist/**/*')
+    // Perform minification tasks, etc here
+    .pipe(gulp.dest('/Volumes/infograficos/staging/2015/08/31/manual-arte'));
+});
+
+gulp.task('publish', ['clean'], cb => {
+  runSequence(
+    'default',
+    'move2server',
     cb
   );
 });
